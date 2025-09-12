@@ -12,171 +12,499 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
-            background: #1a1a2e;
-            color: white;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #ffffff;
         }
 
+        /* Шапка */
         .header {
-            text-align: center;
-            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .tabs {
+        /* Навигация */
+        .nav-tabs {
             display: flex;
-            gap: 10px;
+            gap: 1rem;
             justify-content: center;
-            margin-bottom: 30px;
+            margin-bottom: 1.5rem;
         }
 
         .tab {
-            padding: 10px 20px;
-            background: #16213e;
-            border: 1px solid #0f3460;
+            padding: 0.75rem 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
             color: white;
             cursor: pointer;
-            border-radius: 5px;
-            transition: all 0.3s;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
         }
 
         .tab:hover {
-            background: #0f3460;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
         .tab.active {
-            background: #e94560;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
 
+        /* Контролы периода */
+        .period-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .period-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .period-nav button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .period-nav button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .period-label {
+            padding: 0.5rem 1.5rem;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            min-width: 180px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        /* Сетка метрик */
         .dashboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            max-width: 1200px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
+        /* Карточки метрик */
         .metric {
-            background: #16213e;
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #0f3460;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+        }
+
+        .metric::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
         }
 
         .metric h3 {
-            color: #8b8b8b;
-            font-size: 14px;
-            margin-bottom: 10px;
+            color: #6b7280;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            font-weight: 600;
         }
 
         .metric .value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #e94560;
+            color: #1f2937;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1;
         }
 
+        .metric .details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .metric .plan {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .metric .percentage {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .percentage.positive {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .percentage.negative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Размеры карточек */
         .metric.large {
             grid-column: span 2;
         }
 
+        .metric.large .value {
+            font-size: 3.5rem;
+        }
+
+        /* Спарклайн */
+        .sparkline {
+            height: 40px;
+            margin: 1rem 0;
+            opacity: 0.3;
+        }
+
+        /* Статус */
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .status.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status.inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Лоадер */
         .loading {
             text-align: center;
-            padding: 50px;
+            padding: 4rem;
+            color: white;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+            
+            .metric.large {
+                grid-column: span 1;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>📊 Дашборд метрик</h1>
-    </div>
-
-    <div class="tabs">
-        <button class="tab active" onclick="loadLocation('kremenchug')">Кременчугская</button>
-        <button class="tab" onclick="loadLocation('warsaw')">Варшавская</button>
+        <div class="nav-tabs">
+            <button class="tab active" onclick="loadLocation('kremenchug', this)">Кременчугская</button>
+            <button class="tab" onclick="loadLocation('warsaw', this)">Варшавская</button>
+            <button class="tab" onclick="loadLocation('vasileostrovsky', this)">Василеостровский</button>
+            <button class="tab" onclick="loadLocation('ligovsky', this)">Лиговская</button>
+        </div>
+        
+        <div class="period-controls">
+            <div class="period-nav">
+                <button onclick="changePeriod(-1)">←</button>
+                <div class="period-label" id="currentPeriod">Текущая неделя</div>
+                <button onclick="changePeriod(1)">→</button>
+            </div>
+        </div>
     </div>
 
     <div id="dashboard" class="dashboard">
-        <div class="loading">Загрузка...</div>
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка данных...</p>
+        </div>
     </div>
 
     <script>
         let currentLocation = 'kremenchug';
+        
+        // Расширенные данные для всех локаций
+        const locationData = {
+            kremenchug: {
+                revenue: { value: 1245000, plan: 1200000 },
+                margin: { value: 42.5, plan: 40 },
+                profit: { value: 529125, plan: 480000 },
+                checks: { value: 3456, avg: 360, plan: 3500 },
+                tapStatus: { value: 'Работает', active: true },
+                tapShare: { value: 35.2, plan: 33 },
+                packShare: { value: 45.8, plan: 47 },
+                kitchenShare: { value: 19.0, plan: 20 },
+                tapRevenue: { value: 438240, plan: 396000 },
+                packRevenue: { value: 570210, plan: 564000 },
+                kitchenRevenue: { value: 236550, plan: 240000 },
+                tapMargin: { value: 65.5, plan: 60 },
+                packMargin: { value: 38.2, plan: 35 },
+                kitchenMargin: { value: 28.7, plan: 30 }
+            },
+            warsaw: {
+                revenue: { value: 986000, plan: 1000000 },
+                margin: { value: 38.2, plan: 40 },
+                profit: { value: 376652, plan: 400000 },
+                checks: { value: 2890, avg: 341, plan: 3000 },
+                tapStatus: { value: 'Остановлен', active: false },
+                tapShare: { value: 28.5, plan: 35 },
+                packShare: { value: 52.3, plan: 45 },
+                kitchenShare: { value: 19.2, plan: 20 },
+                tapRevenue: { value: 281010, plan: 350000 },
+                packRevenue: { value: 515658, plan: 450000 },
+                kitchenRevenue: { value: 189332, plan: 200000 },
+                tapMargin: { value: 55.8, plan: 60 },
+                packMargin: { value: 35.6, plan: 35 },
+                kitchenMargin: { value: 25.3, plan: 30 }
+            },
+            vasileostrovsky: {
+                revenue: { value: 1567000, plan: 1500000 },
+                margin: { value: 45.8, plan: 42 },
+                profit: { value: 717686, plan: 630000 },
+                checks: { value: 4123, avg: 380, plan: 4000 },
+                tapStatus: { value: 'Работает', active: true },
+                tapShare: { value: 42.1, plan: 40 },
+                packShare: { value: 38.5, plan: 40 },
+                kitchenShare: { value: 19.4, plan: 20 },
+                tapRevenue: { value: 659707, plan: 600000 },
+                packRevenue: { value: 603295, plan: 600000 },
+                kitchenRevenue: { value: 303998, plan: 300000 },
+                tapMargin: { value: 68.2, plan: 65 },
+                packMargin: { value: 42.3, plan: 40 },
+                kitchenMargin: { value: 31.5, plan: 30 }
+            },
+            ligovsky: {
+                revenue: { value: 1123000, plan: 1100000 },
+                margin: { value: 40.1, plan: 38 },
+                profit: { value: 450323, plan: 418000 },
+                checks: { value: 3567, avg: 315, plan: 3500 },
+                tapStatus: { value: 'Работает', active: true },
+                tapShare: { value: 31.8, plan: 30 },
+                packShare: { value: 48.7, plan: 50 },
+                kitchenShare: { value: 19.5, plan: 20 },
+                tapRevenue: { value: 357114, plan: 330000 },
+                packRevenue: { value: 546901, plan: 550000 },
+                kitchenRevenue: { value: 218985, plan: 220000 },
+                tapMargin: { value: 58.9, plan: 55 },
+                packMargin: { value: 36.4, plan: 35 },
+                kitchenMargin: { value: 27.2, plan: 28 }
+            }
+        };
 
-        // Функция загрузки данных
-        async function loadLocation(location) {
+        // Функция загрузки данных локации
+        async function loadLocation(location, button) {
             // Обновляем активную вкладку
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
+            if (button) {
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                button.classList.add('active');
+            }
             
             currentLocation = location;
             
-            // Показываем загрузку
-            document.getElementById('dashboard').innerHTML = '<div class="loading">Загрузка...</div>';
+            // Показываем загрузчик
+            document.getElementById('dashboard').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Загрузка данных...</p>
+                </div>
+            `;
             
-            try {
-                // Запрашиваем данные с сервера
-                const response = await fetch(`/api/data/${location}`);
-                const data = await response.json();
-                
-                // Отображаем данные
-                displayDashboard(data);
-            } catch (error) {
-                console.error('Ошибка:', error);
-                document.getElementById('dashboard').innerHTML = '<div class="loading">Ошибка загрузки данных</div>';
-            }
+            // Имитация загрузки
+            setTimeout(() => {
+                displayDashboard(locationData[location]);
+            }, 300);
         }
 
         // Функция отображения дашборда
         function displayDashboard(data) {
             const dashboard = document.getElementById('dashboard');
             
-            dashboard.innerHTML = `
-                <div class="metric large">
-                    <h3>ВЫРУЧКА</h3>
-                    <div class="value">${data.revenue.toLocaleString('ru-RU')} ₽</div>
-                </div>
+            // Функция расчета процента и дельты
+            function calculateMetrics(value, plan) {
+                const percentage = plan ? ((value / plan) * 100).toFixed(1) : 0;
+                const delta = plan ? (value - plan) : 0;
+                const isPositive = delta >= 0;
+                return { percentage, delta, isPositive };
+            }
+            
+            // Форматирование значений
+            function formatCurrency(value) {
+                return new Intl.NumberFormat('ru-RU').format(Math.round(value)) + ' ₽';
+            }
+            
+            // Генерация HTML для метрик
+            const metrics = [
+                { id: 'revenue', name: 'Выручка', data: data.revenue, format: 'currency', size: 'large' },
+                { id: 'margin', name: '% наценки (маржа %)', data: data.margin, format: 'percent', size: 'large' },
+                { id: 'profit', name: 'Прибыль', data: data.profit, format: 'currency' },
+                { id: 'checks', name: 'Чеки и средний чек', data: data.checks, format: 'checks' },
+                { id: 'tapStatus', name: 'Розлив стоп-пуск', data: data.tapStatus, format: 'status' },
+                { id: 'tapShare', name: 'Доля розлива', data: data.tapShare, format: 'percent' },
+                { id: 'packShare', name: 'Доля фасовки', data: data.packShare, format: 'percent' },
+                { id: 'kitchenShare', name: 'Доля кухни', data: data.kitchenShare, format: 'percent' },
+                { id: 'tapRevenue', name: 'Выручка розлив', data: data.tapRevenue, format: 'currency' },
+                { id: 'packRevenue', name: 'Выручка фасовка', data: data.packRevenue, format: 'currency' },
+                { id: 'kitchenRevenue', name: 'Выручка кухня', data: data.kitchenRevenue, format: 'currency' },
+                { id: 'tapMargin', name: 'Наценка розлив', data: data.tapMargin, format: 'percent' },
+                { id: 'packMargin', name: 'Наценка фасовка', data: data.packMargin, format: 'percent' },
+                { id: 'kitchenMargin', name: 'Наценка кухня', data: data.kitchenMargin, format: 'percent' }
+            ];
+            
+            let html = '';
+            
+            metrics.forEach(metric => {
+                const metricData = metric.data;
+                let valueDisplay = '';
+                let detailsHTML = '';
                 
-                <div class="metric large">
-                    <h3>% НАЦЕНКИ (МАРЖА %)</h3>
-                    <div class="value">${data.margin}%</div>
-                </div>
+                // Форматирование значения в зависимости от типа
+                if (metric.format === 'currency') {
+                    valueDisplay = formatCurrency(metricData.value);
+                } else if (metric.format === 'percent') {
+                    valueDisplay = metricData.value.toFixed(1) + '%';
+                } else if (metric.format === 'checks') {
+                    valueDisplay = `${metricData.value.toLocaleString('ru-RU')} / ${metricData.avg}₽`;
+                } else if (metric.format === 'status') {
+                    valueDisplay = `<span class="status ${metricData.active ? 'active' : 'inactive'}">
+                        <span class="status-dot"></span>${metricData.value}
+                    </span>`;
+                }
                 
-                <div class="metric">
-                    <h3>ПРИБЫЛЬ</h3>
-                    <div class="value">${data.profit.toLocaleString('ru-RU')} ₽</div>
-                </div>
+                // Детали для метрик с планами
+                if (metricData.plan && metric.format !== 'status') {
+                    const { percentage, delta, isPositive } = calculateMetrics(metricData.value, metricData.plan);
+                    
+                    let planDisplay = '';
+                    if (metric.format === 'currency') {
+                        planDisplay = formatCurrency(metricData.plan);
+                    } else if (metric.format === 'percent') {
+                        planDisplay = metricData.plan.toFixed(1) + '%';
+                    } else if (metric.format === 'checks') {
+                        planDisplay = metricData.plan.toLocaleString('ru-RU');
+                    }
+                    
+                    detailsHTML = `
+                        <div class="details">
+                            <span class="plan">План: ${planDisplay}</span>
+                            <span class="percentage ${isPositive ? 'positive' : 'negative'}">
+                                ${percentage}% ${isPositive ? '↑' : '↓'}
+                            </span>
+                        </div>
+                    `;
+                }
                 
-                <div class="metric">
-                    <h3>ЧЕКИ И СРЕДНИЙ ЧЕК</h3>
-                    <div class="value">${data.checks} / ${data.avgCheck}₽</div>
-                </div>
-                
-                <div class="metric">
-                    <h3>РОЗЛИВ СТОП-ПУСК</h3>
-                    <div class="value">${data.tapStatus}</div>
-                </div>
-                
-                <div class="metric">
-                    <h3>ДОЛЯ РОЗЛИВА</h3>
-                    <div class="value">${data.tapShare}%</div>
-                </div>
-                
-                <div class="metric">
-                    <h3>ДОЛЯ ФАСОВКИ</h3>
-                    <div class="value">${data.packShare}%</div>
-                </div>
-                
-                <div class="metric">
-                    <h3>ДОЛЯ КУХНИ</h3>
-                    <div class="value">${data.kitchenShare}%</div>
-                </div>
-            `;
+                html += `
+                    <div class="metric ${metric.size || ''}">
+                        <h3>${metric.name}</h3>
+                        <div class="value">${valueDisplay}</div>
+                        ${detailsHTML}
+                    </div>
+                `;
+            });
+            
+            dashboard.innerHTML = html;
         }
 
-        // Загружаем данные при старте
-        loadLocation('kremenchug');
+        // Функция изменения периода
+        function changePeriod(direction) {
+            const periods = ['Прошлая неделя', 'Текущая неделя', 'Следующая неделя'];
+            const currentLabel = document.getElementById('currentPeriod').textContent;
+            let currentIndex = periods.indexOf(currentLabel);
+            
+            if (currentIndex === -1) currentIndex = 1;
+            
+            currentIndex += direction;
+            if (currentIndex < 0) currentIndex = 0;
+            if (currentIndex >= periods.length) currentIndex = periods.length - 1;
+            
+            document.getElementById('currentPeriod').textContent = periods[currentIndex];
+            
+            // Перезагрузка данных для нового периода
+            loadLocation(currentLocation);
+        }
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLocation('kremenchug');
+        });
     </script>
 </body>
 </html>

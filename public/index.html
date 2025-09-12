@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дашборд метрик</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: #16213e;
+            border: 1px solid #0f3460;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #0f3460;
+        }
+
+        .tab.active {
+            background: #e94560;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .metric {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #0f3460;
+        }
+
+        .metric h3 {
+            color: #8b8b8b;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .metric .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #e94560;
+        }
+
+        .metric.large {
+            grid-column: span 2;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Дашборд метрик</h1>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="loadLocation('kremenchug')">Кременчугская</button>
+        <button class="tab" onclick="loadLocation('warsaw')">Варшавская</button>
+    </div>
+
+    <div id="dashboard" class="dashboard">
+        <div class="loading">Загрузка...</div>
+    </div>
+
+    <script>
+        let currentLocation = 'kremenchug';
+
+        // Функция загрузки данных
+        async function loadLocation(location) {
+            // Обновляем активную вкладку
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            currentLocation = location;
+            
+            // Показываем загрузку
+            document.getElementById('dashboard').innerHTML = '<div class="loading">Загрузка...</div>';
+            
+            try {
+                // Запрашиваем данные с сервера
+                const response = await fetch(`/api/data/${location}`);
+                const data = await response.json();
+                
+                // Отображаем данные
+                displayDashboard(data);
+            } catch (error) {
+                console.error('Ошибка:', error);
+                document.getElementById('dashboard').innerHTML = '<div class="loading">Ошибка загрузки данных</div>';
+            }
+        }
+
+        // Функция отображения дашборда
+        function displayDashboard(data) {
+            const dashboard = document.getElementById('dashboard');
+            
+            dashboard.innerHTML = `
+                <div class="metric large">
+                    <h3>ВЫРУЧКА</h3>
+                    <div class="value">${data.revenue.toLocaleString('ru-RU')} ₽</div>
+                </div>
+                
+                <div class="metric large">
+                    <h3>% НАЦЕНКИ (МАРЖА %)</h3>
+                    <div class="value">${data.margin}%</div>
+                </div>
+                
+                <div class="metric">
+                    <h3>ПРИБЫЛЬ</h3>
+                    <div class="value">${data.profit.toLocaleString('ru-RU')} ₽</div>
+                </div>
+                
+                <div class="metric">
+                    <h3>ЧЕКИ И СРЕДНИЙ ЧЕК</h3>
+                    <div class="value">${data.checks} / ${data.avgCheck}₽</div>
+                </div>
+                
+                <div class="metric">
+                    <h3>РОЗЛИВ СТОП-ПУСК</h3>
+                    <div class="value">${data.tapStatus}</div>
+                </div>
+                
+                <div class="metric">
+                    <h3>ДОЛЯ РОЗЛИВА</h3>
+                    <div class="value">${data.tapShare}%</div>
+                </div>
+                
+                <div class="metric">
+                    <h3>ДОЛЯ ФАСОВКИ</h3>
+                    <div class="value">${data.packShare}%</div>
+                </div>
+                
+                <div class="metric">
+                    <h3>ДОЛЯ КУХНИ</h3>
+                    <div class="value">${data.kitchenShare}%</div>
+                </div>
+            `;
+        }
+
+        // Загружаем данные при старте
+        loadLocation('kremenchug');
+    </script>
+</body>
+</html>

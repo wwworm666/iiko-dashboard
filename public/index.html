@@ -472,15 +472,22 @@
                 }
                 
                 html += `
-                    <div class="metric ${metric.size || ''}">
+                    <div class="metric ${metric.size || ''}" data-id="${metric.id}">
                         <h3>${metric.name}</h3>
                         <div class="value">${valueDisplay}</div>
                         ${detailsHTML}
                     </div>
                 `;
             });
-            
+
             dashboard.innerHTML = html;
+
+            const tapTile = dashboard.querySelector('[data-id="tapStatus"]');
+            if (tapTile) {
+                tapTile.addEventListener('click', () => {
+                    window.location.href = '/taps.html';
+                });
+            }
         }
 
         // Функция изменения периода

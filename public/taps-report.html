@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Отчёт по кранам</title>
+<style>
+body {font-family:sans-serif; margin:0; padding:1rem;}
+header {margin-bottom:1rem;}
+table {border-collapse:collapse; width:100%; margin-top:1rem;}
+th,td {border:1px solid #ccc; padding:0.5rem; text-align:center;}
+</style>
+</head>
+<body>
+<header>
+  <a href="/taps.html">← Назад</a>
+</header>
+<h1>Отчёт по кранам</h1>
+<input type="week" id="weekPicker">
+<button id="loadBtn">Загрузить</button>
+<div id="report"></div>
+<div id="events"></div>
+<script>
+function weekRange(value){
+  const [y,w]=value.split('-W').map(Number);
+  const simple=new Date(y,0,1+(w-1)*7);
+  const dow=simple.getDay();
+  const start=new Date(simple);
+  if(dow<=4) start.setDate(simple.getDate()-simple.getDay()+1);
+  else start.setDate(simple.getDate()+8-simple.getDay());
+  const end=new Date(start);
+  end.setDate(start.getDate()+7);
+  return {start,end};
+}
+function load(){
+  const val=document.getElementById('weekPicker').value;
+  if(!val) return;
+  const {start,end}=weekRange(val);
+  fetch(`/api/taps/history?start=${start.toISOString()}&end=${end.toISOString()}`)
+    .then(r=>r.json()).then(data=>{
+      const rep=document.getElementById('report');
+      let html='<table><tr><th>Кран</th><th>ACTIVE %</th><th>STOP %</th></tr>';
+      Object.entries(data.report).forEach(([tap,v])=>{
+        html+=`<tr><td>${tap}</td><td>${v.active.toFixed(1)}</td><td>${v.stop.toFixed(1)}</td></tr>`;
+      });
+      html+='</table>';
+      rep.innerHTML=html;
+      const evDiv=document.getElementById('events');
+      let evHTML='';
+      Object.entries(data.events).forEach(([tap,list])=>{
+        evHTML+=`<h3>${tap}</h3><ul>`;
+        list.forEach(ev=>{
+          evHTML+=`<li>${new Date(ev.time).toLocaleString()} - ${ev.action}${ev.beer? ' ('+ev.beer+')':''} - ${ev.user}</li>`;
+        });
+        evHTML+='</ul>';
+      });
+      evDiv.innerHTML=evHTML;
+    });
+}
+document.getElementById('loadBtn').onclick=load;
+</script>
+</body>
+</html>

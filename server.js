@@ -21,12 +21,19 @@ try {
     beerNames = [];
 }
 
-// Текущее состояние кранов и история событий
+// Текущее состояние кранов по барам и история событий
+const BAR_CODES = ['krem', 'var', 'vas', 'lig'];
 const taps = {};
 const events = [];
-for (let i = 1; i <= 12; i++) {
-    taps[`TAP${i}`] = { status: 'STOP', beer: null };
+
+function initBar(code) {
+    taps[code] = {};
+    for (let i = 1; i <= 12; i++) {
+        taps[code][`TAP${i}`] = { state: 'STOP', beer_name: null };
+    }
 }
+
+BAR_CODES.forEach(initBar);
 
 // Конфигурация iikoServer
 const IIKO_CONFIG = {
@@ -150,91 +157,59 @@ app.post('/api/beer-names', (req, res) => {
 
 // Текущие состояния кранов
 app.get('/api/taps', (req, res) => {
-    res.json(taps);
+    const bar = req.query.bar;
+    if (!bar || !taps[bar]) {
+        return res.status(400).json({ error: 'Unknown bar' });
+    }
+    res.json(taps[bar]);
 });
 
 // Создание события по крану
-app.post('/api/taps/:id', (req, res) => {
-    const tapId = `TAP${req.params.id}`;
-    const { action, beer } = req.body;
-    const user = req.body.user || null;
-    if (!taps[tapId]) {
-        return res.status(404).json({ error: 'Кран не найден' });
+app.post('/api/taps/event', (req, res) => {
+    const { bar, tap, event, beer_name, who, ts } = req.body;
+    if (!bar || !taps[bar] || !taps[bar][tap]) {
+        return res.status(400).json({ error: 'Unknown bar or tap' });
     }
 
-    const time = new Date().toISOString();
-    let status;
-    switch (action) {
-        case 'start':
-            status = 'ACTIVE';
-            taps[tapId] = { status, beer };
+    const time = ts ? new Date(ts).toISOString() : new Date().toISOString();
+
+    switch (event) {
+        case 'START':
+            taps[bar][tap] = { state: 'ACTIVE', beer_name };
             break;
-        case 'replace':
-            status = 'ACTIVE';
-            taps[tapId] = { status, beer };
+        case 'STOP':
+            taps[bar][tap] = { state: 'STOP', beer_name: null };
             break;
-        case 'stop':
-            status = 'STOP';
-            taps[tapId] = { status, beer: null };
+        case 'CHANGE':
+            taps[bar][tap] = { state: 'ACTIVE', beer_name };
             break;
         default:
-            return res.status(400).json({ error: 'Неизвестное действие' });
+            return res.status(400).json({ error: 'Unknown event' });
     }
 
-    events.push({ tap: tapId, action: action.toUpperCase(), beer: beer || null, user, time });
-    res.json({ status: taps[tapId] });
+    events.push({ bar, tap, event, beer_name: beer_name || null, who: who || null, ts: time });
+    res.json(taps[bar][tap]);
 });
 
-// Отчёт по кранам за период
+// История событий по бару
 app.get('/api/taps/history', (req, res) => {
-    const { start, end } = req.query;
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-
-    const report = {};
-    const eventsByTap = {};
-
-    for (let i = 1; i <= 12; i++) {
-        const tapId = `TAP${i}`;
-        const tapEvents = events
-            .filter(e => e.tap === tapId && new Date(e.time) <= endDate)
-            .sort((a, b) => new Date(a.time) - new Date(b.time));
-
-        eventsByTap[tapId] = tapEvents.filter(e => new Date(e.time) >= startDate);
-
-        let state = 'STOP';
-        let lastTime = startDate;
-        for (const ev of tapEvents) {
-            const t = new Date(ev.time);
-            if (t < startDate) {
-                state = ev.action === 'STOP' ? 'STOP' : 'ACTIVE';
-                continue;
-            }
-            if (t > endDate) break;
-            if (state === 'ACTIVE') {
-                report[tapId] = report[tapId] || { active: 0, stop: 0 };
-                report[tapId].active += t - lastTime;
-            } else {
-                report[tapId] = report[tapId] || { active: 0, stop: 0 };
-                report[tapId].stop += t - lastTime;
-            }
-            state = ev.action === 'STOP' ? 'STOP' : 'ACTIVE';
-            lastTime = t;
-        }
-        // завершающий интервал
-        if (!report[tapId]) report[tapId] = { active: 0, stop: 0 };
-        if (state === 'ACTIVE') {
-            report[tapId].active += endDate - lastTime;
-        } else {
-            report[tapId].stop += endDate - lastTime;
-        }
-
-        const total = report[tapId].active + report[tapId].stop;
-        report[tapId].active = total ? (report[tapId].active / total) * 100 : 0;
-        report[tapId].stop = total ? (report[tapId].stop / total) * 100 : 0;
+    const { bar, from, to } = req.query;
+    if (!bar || !taps[bar]) {
+        return res.status(400).json({ error: 'Unknown bar' });
     }
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    const list = events
+        .filter(e => e.bar === bar && new Date(e.ts) >= fromDate && new Date(e.ts) <= toDate)
+        .sort((a, b) => new Date(a.ts) - new Date(b.ts));
+    res.json(list);
+});
 
-    res.json({ report, events: eventsByTap });
+// Маршруты страниц для баров
+BAR_CODES.forEach(code => {
+    app.get(`/${code}`, (req, res) => {
+        res.sendFile(path.join(__dirname, 'public', 'bar.html'));
+    });
 });
 
 // Главная страница

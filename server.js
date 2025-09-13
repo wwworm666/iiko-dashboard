@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
+const fs = require('fs');
 
 const app = express();
 
@@ -10,14 +11,15 @@ app.use(express.json());
 // ВАЖНО: указываем полный путь к папке public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Простая справка по сортам пива
-const BEERS = [
-    'Lager',
-    'IPA',
-    'Stout',
-    'Pilsner',
-    'Wheat'
-];
+// Хранилище названий пива (глобальный список)
+const BEER_NAMES_FILE = path.join(__dirname, 'beer-names.json');
+let beerNames = [];
+try {
+    beerNames = JSON.parse(fs.readFileSync(BEER_NAMES_FILE, 'utf8'));
+    if (!Array.isArray(beerNames)) beerNames = [];
+} catch (e) {
+    beerNames = [];
+}
 
 // Текущее состояние кранов и история событий
 const taps = {};
@@ -124,9 +126,26 @@ app.get('/api/data/:location', async (req, res) => {
     }
 });
 
-// Справочник сортов пива
-app.get('/api/beers', (req, res) => {
-    res.json(BEERS);
+// Эндпоинты для названий пива
+app.get('/api/beer-names', (req, res) => {
+    res.json(beerNames);
+});
+
+app.post('/api/beer-names', (req, res) => {
+    let name = (req.body.name || '').trim();
+    if (!name) {
+        return res.status(400).json({ error: 'Name is required' });
+    }
+    const exists = beerNames.some(b => b.toLowerCase() === name.toLowerCase());
+    if (!exists) {
+        beerNames.push(name);
+        try {
+            fs.writeFileSync(BEER_NAMES_FILE, JSON.stringify(beerNames, null, 2));
+        } catch (e) {
+            console.error('Error writing beer names file', e);
+        }
+    }
+    res.json(beerNames);
 });
 
 // Текущие состояния кранов
@@ -137,7 +156,8 @@ app.get('/api/taps', (req, res) => {
 // Создание события по крану
 app.post('/api/taps/:id', (req, res) => {
     const tapId = `TAP${req.params.id}`;
-    const { action, beer, user } = req.body;
+    const { action, beer } = req.body;
+    const user = req.body.user || null;
     if (!taps[tapId]) {
         return res.status(404).json({ error: 'Кран не найден' });
     }

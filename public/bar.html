@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Управление кранами</title>
+<style>
+body{margin:0;font-family:sans-serif;background:#f5f5f5;}
+header{display:flex;justify-content:space-between;align-items:center;padding:1rem;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);gap:10px;padding:10px;height:calc(100vh - 80px);}
+.tile{display:flex;flex-direction:column;justify-content:center;align-items:center;border-radius:8px;color:#fff;font-size:1.5rem;cursor:pointer;}
+.tile.active{background:#27ae60;}
+.tile.stop{background:#c0392b;}
+.tile .tap-id{margin-top:.5rem;font-size:.8rem;opacity:.8;}
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;}
+.modal.open{display:flex;}
+.modal-content{background:#fff;padding:1rem;border-radius:8px;width:90%;max-width:400px;}
+.modal-content input{width:100%;padding:.5rem;margin-bottom:.5rem;}
+.time-adjust{display:flex;gap:.5rem;margin-bottom:.5rem;}
+.time-adjust button{flex:1;}
+.actions{display:flex;gap:.5rem;}
+.actions button{flex:1;padding:.5rem;}
+.history-panel{position:fixed;top:0;right:0;bottom:0;width:100%;max-width:600px;background:#fff;box-shadow:-2px 0 5px rgba(0,0,0,0.3);transform:translateX(100%);transition:transform .3s;display:flex;flex-direction:column;}
+.history-panel.open{transform:translateX(0);}
+.history-panel header{display:flex;gap:.5rem;padding:.5rem;}
+.history-table{flex:1;overflow:auto;}
+.history-table table{border-collapse:collapse;width:100%;}
+.history-table th,.history-table td{border:1px solid #ccc;padding:.25rem;font-size:.8rem;text-align:left;}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="barTitle"></h1>
+  <button id="historyBtn">История</button>
+</header>
+<div class="grid" id="tapsGrid"></div>
+
+<div class="modal" id="actionModal">
+  <div class="modal-content">
+    <h2 id="modalTitle"></h2>
+    <input type="text" id="beerInput" placeholder="Название пива" list="beerSuggestions">
+    <datalist id="beerSuggestions"></datalist>
+    <input type="text" id="userInput" placeholder="Пользователь">
+    <input type="datetime-local" id="timeInput">
+    <div class="time-adjust">
+      <button id="minus5">-5 мин</button>
+      <button id="minus15">-15 мин</button>
+    </div>
+    <div class="actions">
+      <button id="startBtn">ПУСК</button>
+      <button id="stopBtn">СТОП</button>
+      <button id="replaceBtn">ЗАМЕНА</button>
+      <button id="cancelBtn">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div class="history-panel" id="historyPanel">
+  <header>
+    <input type="date" id="fromDate">
+    <input type="date" id="toDate">
+    <button id="weekBtn">Неделя</button>
+    <button id="loadHistory">Загрузить</button>
+    <button id="closeHistory">×</button>
+  </header>
+  <div class="history-table">
+    <table>
+      <thead>
+        <tr><th>Время</th><th>Кран</th><th>Событие</th><th>Пиво</th><th>Пользователь</th></tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const BAR = window.location.pathname.replace('/', '');
+document.getElementById('barTitle').textContent = BAR.toUpperCase();
+let taps={};
+let currentTap=null;
+let serverNames=[];
+let selectedAction='START';
+function loadServerNames(){return fetch('/api/beer-names').then(r=>r.json()).then(n=>{serverNames=n;updateSuggestions();}).catch(()=>{});}
+function loadLocalNames(){try{return JSON.parse(localStorage.getItem('beerNames'))||{};}catch(e){return {}}}
+function saveLocalName(name){const names=loadLocalNames();const key=name.trim();const now=Date.now();if(names[key]){names[key].count++;}else{names[key]={count:1};}names[key].lastUsed=now;localStorage.setItem('beerNames',JSON.stringify(names));}
+function updateSuggestions(){const local=loadLocalNames();const merged={};serverNames.forEach(n=>merged[n.toLowerCase()]={name:n,count:0,lastUsed:0});Object.keys(local).forEach(n=>merged[n.toLowerCase()]={name:n,count:local[n].count,lastUsed:local[n].lastUsed||0});const list=document.getElementById('beerSuggestions');const sorted=Object.values(merged).sort((a,b)=>b.count-a.count||b.lastUsed-a.lastUsed).map(o=>o.name);list.innerHTML=sorted.map(n=>`<option value="${n}">`).join('');}
+function saveServerName(name){fetch('/api/beer-names',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}).catch(()=>{});}
+function loadTaps(){return fetch('/api/taps?bar='+BAR).then(r=>r.json()).then(data=>{taps=data;renderGrid();});}
+function renderGrid(){const grid=document.getElementById('tapsGrid');grid.innerHTML='';for(let i=1;i<=12;i++){const id=`TAP${i}`;const info=taps[id]||{state:'STOP',beer_name:null};const tile=document.createElement('div');tile.className='tile '+(info.state==='ACTIVE'?'active':'stop');tile.innerHTML=`<div>${info.state==='ACTIVE'?info.beer_name:'СТОП'}</div><div class="tap-id">${id}</div>`;tile.onclick=()=>openModal(id);grid.appendChild(tile);}}
+function openModal(id){currentTap=id;document.getElementById('modalTitle').textContent=id;const beerInput=document.getElementById('beerInput');const last=localStorage.getItem('lastBeer_'+BAR+'_'+id);beerInput.value=taps[id].state==='ACTIVE'?taps[id].beer_name:(last||'');document.getElementById('userInput').value=localStorage.getItem('lastUser')||'';const now=new Date();document.getElementById('timeInput').value=now.toISOString().slice(0,16);document.getElementById('actionModal').classList.add('open');beerInput.focus();}
+function closeModal(){document.getElementById('actionModal').classList.remove('open');}
+function adjustTime(mins){const input=document.getElementById('timeInput');let d=new Date(input.value);if(isNaN(d))d=new Date();d.setMinutes(d.getMinutes()-mins);input.value=d.toISOString().slice(0,16);}
+function sendAction(action){const beer=document.getElementById('beerInput').value.trim();const user=document.getElementById('userInput').value.trim();let ts=new Date(document.getElementById('timeInput').value);if(isNaN(ts))ts=new Date();ts=ts.toISOString();if((action==='START'||action==='CHANGE')&&!beer)return;fetch('/api/taps/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bar:BAR,tap:currentTap,event:action,beer_name:beer,who:user,ts})}).then(r=>r.json()).then(()=>{if(action!=='STOP'){saveLocalName(beer);saveServerName(beer);localStorage.setItem('lastBeer_'+BAR+'_'+currentTap,beer);}if(user)localStorage.setItem('lastUser',user);closeModal();loadTaps();});}
+document.getElementById('startBtn').onclick=()=>sendAction('START');
+document.getElementById('stopBtn').onclick=()=>sendAction('STOP');
+document.getElementById('replaceBtn').onclick=()=>sendAction('CHANGE');
+document.getElementById('cancelBtn').onclick=closeModal;
+document.getElementById('minus5').onclick=()=>adjustTime(5);
+document.getElementById('minus15').onclick=()=>adjustTime(15);
+document.getElementById('actionModal').addEventListener('click',e=>{if(e.target.id==='actionModal')closeModal();});
+function toggleHistory(){document.getElementById('historyPanel').classList.toggle('open');}
+document.getElementById('historyBtn').onclick=toggleHistory;
+document.getElementById('closeHistory').onclick=toggleHistory;
+function setWeek(){const now=new Date();const day=now.getDay();const diff=(day===0?-6:1-day);const start=new Date(now);start.setHours(0,0,0,0);start.setDate(start.getDate()+diff);const end=new Date(start);end.setDate(start.getDate()+7);document.getElementById('fromDate').value=start.toISOString().slice(0,10);document.getElementById('toDate').value=end.toISOString().slice(0,10);}
+document.getElementById('weekBtn').onclick=setWeek;
+function loadHistory(){const from=document.getElementById('fromDate').value;const to=document.getElementById('toDate').value;if(!from||!to)return;const url=`/api/taps/history?bar=${BAR}&from=${from}T00:00:00&to=${to}T23:59:59`;fetch(url).then(r=>r.json()).then(list=>{const body=document.getElementById('historyBody');body.innerHTML='';list.forEach(ev=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${new Date(ev.ts).toLocaleString()}</td><td>${ev.tap}</td><td>${ev.event}</td><td>${ev.beer_name||''}</td><td>${ev.who||''}</td>`;body.appendChild(tr);});});}
+document.getElementById('loadHistory').onclick=loadHistory;
+loadServerNames().finally(loadTaps);
+</script>
+</body>
+</html>

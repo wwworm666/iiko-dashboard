@@ -4,8 +4,27 @@ const axios = require('axios');
 
 const app = express();
 
+// Парсим JSON из запросов
+app.use(express.json());
+
 // ВАЖНО: указываем полный путь к папке public
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Простая справка по сортам пива
+const BEERS = [
+    'Lager',
+    'IPA',
+    'Stout',
+    'Pilsner',
+    'Wheat'
+];
+
+// Текущее состояние кранов и история событий
+const taps = {};
+const events = [];
+for (let i = 1; i <= 12; i++) {
+    taps[`TAP${i}`] = { status: 'STOP', beer: null };
+}
 
 // Конфигурация iikoServer
 const IIKO_CONFIG = {
@@ -103,6 +122,99 @@ app.get('/api/data/:location', async (req, res) => {
             code: error.code || 'UNKNOWN_ERROR'
         });
     }
+});
+
+// Справочник сортов пива
+app.get('/api/beers', (req, res) => {
+    res.json(BEERS);
+});
+
+// Текущие состояния кранов
+app.get('/api/taps', (req, res) => {
+    res.json(taps);
+});
+
+// Создание события по крану
+app.post('/api/taps/:id', (req, res) => {
+    const tapId = `TAP${req.params.id}`;
+    const { action, beer, user } = req.body;
+    if (!taps[tapId]) {
+        return res.status(404).json({ error: 'Кран не найден' });
+    }
+
+    const time = new Date().toISOString();
+    let status;
+    switch (action) {
+        case 'start':
+            status = 'ACTIVE';
+            taps[tapId] = { status, beer };
+            break;
+        case 'replace':
+            status = 'ACTIVE';
+            taps[tapId] = { status, beer };
+            break;
+        case 'stop':
+            status = 'STOP';
+            taps[tapId] = { status, beer: null };
+            break;
+        default:
+            return res.status(400).json({ error: 'Неизвестное действие' });
+    }
+
+    events.push({ tap: tapId, action: action.toUpperCase(), beer: beer || null, user, time });
+    res.json({ status: taps[tapId] });
+});
+
+// Отчёт по кранам за период
+app.get('/api/taps/history', (req, res) => {
+    const { start, end } = req.query;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    const report = {};
+    const eventsByTap = {};
+
+    for (let i = 1; i <= 12; i++) {
+        const tapId = `TAP${i}`;
+        const tapEvents = events
+            .filter(e => e.tap === tapId && new Date(e.time) <= endDate)
+            .sort((a, b) => new Date(a.time) - new Date(b.time));
+
+        eventsByTap[tapId] = tapEvents.filter(e => new Date(e.time) >= startDate);
+
+        let state = 'STOP';
+        let lastTime = startDate;
+        for (const ev of tapEvents) {
+            const t = new Date(ev.time);
+            if (t < startDate) {
+                state = ev.action === 'STOP' ? 'STOP' : 'ACTIVE';
+                continue;
+            }
+            if (t > endDate) break;
+            if (state === 'ACTIVE') {
+                report[tapId] = report[tapId] || { active: 0, stop: 0 };
+                report[tapId].active += t - lastTime;
+            } else {
+                report[tapId] = report[tapId] || { active: 0, stop: 0 };
+                report[tapId].stop += t - lastTime;
+            }
+            state = ev.action === 'STOP' ? 'STOP' : 'ACTIVE';
+            lastTime = t;
+        }
+        // завершающий интервал
+        if (!report[tapId]) report[tapId] = { active: 0, stop: 0 };
+        if (state === 'ACTIVE') {
+            report[tapId].active += endDate - lastTime;
+        } else {
+            report[tapId].stop += endDate - lastTime;
+        }
+
+        const total = report[tapId].active + report[tapId].stop;
+        report[tapId].active = total ? (report[tapId].active / total) * 100 : 0;
+        report[tapId].stop = total ? (report[tapId].stop / total) * 100 : 0;
+    }
+
+    res.json({ report, events: eventsByTap });
 });
 
 // Главная страница

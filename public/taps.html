@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Розлив стоп-пуск</title>
+<style>
+body {font-family: sans-serif; background:#f5f5f5; margin:0;}
+header {padding:1rem; background:#333; color:#fff;}
+a {color:#fff; margin-left:1rem;}
+.container {display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:1rem; padding:1rem;}
+.tap {padding:2rem; border-radius:8px; text-align:center; font-size:1.2rem; cursor:pointer; background:#e74c3c; color:#fff;}
+.tap.active {background:#2ecc71;}
+.modal {display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;}
+.modal-content {background:#fff; padding:1rem; border-radius:8px; width:300px;}
+.modal-content h2 {margin-top:0;}
+.modal-content select, .modal-content input {width:100%; margin-bottom:1rem; padding:0.5rem;}
+.actions button {margin-right:0.5rem; margin-top:0.5rem;}
+</style>
+</head>
+<body>
+<header>
+  <span>Управление кранами</span>
+  <a href="/taps-report.html">Отчёты</a>
+  <a href="/">Главная</a>
+</header>
+<div class="container" id="taps"></div>
+<div class="modal" id="actionModal">
+  <div class="modal-content">
+    <h2 id="modalTitle"></h2>
+    <input type="text" id="user" placeholder="Пользователь">
+    <select id="beerSelect"></select>
+    <div class="actions">
+      <button id="startBtn">ПУСК</button>
+      <button id="stopBtn">СТОП</button>
+      <button id="replaceBtn">ЗАМЕНА</button>
+      <button id="cancelBtn">Отмена</button>
+    </div>
+  </div>
+</div>
+<script>
+const beers = [];
+let currentTap = null;
+function fetchBeers(){
+  return fetch('/api/beers').then(r=>r.json()).then(data=>{
+    beers.splice(0, beers.length, ...data);
+    const sel = document.getElementById('beerSelect');
+    sel.innerHTML = beers.map(b=>`<option value="${b}">${b}</option>`).join('');
+  });
+}
+function fetchTaps(){
+  return fetch('/api/taps').then(r=>r.json()).then(data=>{
+    const cont = document.getElementById('taps');
+    cont.innerHTML='';
+    Object.keys(data).forEach(id=>{
+      const info = data[id];
+      const div = document.createElement('div');
+      div.className = 'tap' + (info.status==='ACTIVE'?' active':'');
+      div.dataset.tap=id;
+      div.textContent = info.status==='ACTIVE'? info.beer : 'СТОП';
+      div.addEventListener('click',()=>openModal(id));
+      cont.appendChild(div);
+    });
+  });
+}
+function openModal(id){
+  currentTap=id;
+  document.getElementById('modalTitle').textContent=id;
+  document.getElementById('actionModal').style.display='flex';
+}
+function closeModal(){
+  document.getElementById('actionModal').style.display='none';
+}
+function sendAction(action){
+  const user=document.getElementById('user').value || 'anon';
+  const beer=document.getElementById('beerSelect').value;
+  const body={action,user};
+  if(action!=='stop') body.beer=beer;
+  fetch('/api/taps/'+currentTap.replace('TAP',''),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  }).then(r=>r.json()).then(()=>{closeModal();fetchTaps();});
+}
+document.getElementById('startBtn').onclick=()=>sendAction('start');
+document.getElementById('stopBtn').onclick=()=>sendAction('stop');
+document.getElementById('replaceBtn').onclick=()=>sendAction('replace');
+document.getElementById('cancelBtn').onclick=closeModal;
+fetchBeers().then(fetchTaps);
+</script>
+</body>
+</html>
